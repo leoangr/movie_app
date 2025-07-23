@@ -3,7 +3,7 @@ const MoviesCardPopular = ({ moviePopular, index }) => {
     return (
         <li>
             <p>{index + 1}</p>
-            <img src={moviePopular.img_movie} alt={moviePopular.title_movie} />
+            <img src={moviePopular.poster_url} alt={moviePopular.searchTerm} />
         </li>
     );
 };

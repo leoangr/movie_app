@@ -5,12 +5,11 @@ import MovieCard from "./components/MovieCard";
 import MoviesCardPopular from "./components/MostlySearchMovieCard";
 import PaginationButton from "./components/Pagination";
 import { useDebounce } from "react-use";
+import { updateSearchCount, getMostSearchedMovies } from "./appwrite";
 
 const API_BASE_URL = 'https://api.themoviedb.org/3';
 
 const API_KEY = import.meta.env.VITE_TMDB_API_KEY;
-
-const DOMAIN = import.meta.env.VITE_DOMAIN;
 
 const API_OPTIONS = {
   method: 'GET',
@@ -37,26 +36,17 @@ const App = () => {
   // by waiting for the user to stop typing for 500ms
   useDebounce(() => setDebouncedSearchTerm(searchTerm), 1000, [searchTerm]);
 
-
   const mostlySearchedMovies = async () => {
     try {
+      const movies = await getMostSearchedMovies();
 
-      const response = await fetch(
-        `${DOMAIN}/mostly-searched`
-      );
-
-      if(!response.ok) {
-        throw new Error('Failed to fetch popular movies');
-      }
-
-      const data = await response.json();
-      setMostSearchedMovies(data);
-
+      setMostSearchedMovies(movies);
 
     } catch (error) {
-      console.error("Error fetching popular movies:");
+      console.error("Error fetching mosty searched movies:");
     }
   }
+
   const fetchMovies = async (query = '', page = 1) => {
 
     setIsLoading(true);
@@ -85,23 +75,9 @@ const App = () => {
       setMovieList(data.results || []);
       setTotalPages(data.total_pages || 1);
 
-      console.log(data);
-
-      // 1️⃣ Simpan keyword ke backend kamu
       if (query.trim() !== '' && data.results.length > 0) {
-
-        const firstPoster = data.results[0]?.poster_path
-        ? `https://image.tmdb.org/t/p/w500${data.results[0].poster_path}`
-        : '';
         const firstTitle = data.results[0]?.title || '';
-
-        await fetch(`${DOMAIN}/check-title`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ title: firstTitle, img: firstPoster })
-        });
+        await updateSearchCount(firstTitle, data.results[0]);
       }
 
 
@@ -144,7 +120,7 @@ const App = () => {
 
           <ul>
             {mostSearchedMovies.map((popularMovie, index) => (
-              <MoviesCardPopular moviePopular={popularMovie} key={popularMovie.id} index={index} />
+              <MoviesCardPopular key={popularMovie.$id} moviePopular={popularMovie} index={index} />
             ))}
           </ul>
           
